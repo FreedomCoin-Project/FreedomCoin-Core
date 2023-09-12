@@ -31,6 +31,7 @@ bool TransactionRecord::decomposeCoinStake(const CWallet* wallet, const CWalletT
     const uint256& hash = wtx.GetHash();
     TransactionRecord sub(hash, wtx.GetTxTime(), wtx.tx->GetTotalSize());
 
+    int nIndex = (int) wtx.tx->vout.size();
     if (isminetype mine = wallet->IsMine(wtx.tx->vout[1])) {
         // Check for cold stakes.
         if (wtx.tx->HasP2CSOutputs()) {
@@ -48,15 +49,24 @@ bool TransactionRecord::decomposeCoinStake(const CWallet* wallet, const CWalletT
             sub.address = EncodeDestination(address);
             sub.credit = nCredit - nDebit;
         }
-    } else {
+    } else if (isminetype mine = wallet->IsMine(wtx.tx->vout[nIndex - 2])) {
         //Patriotnode reward
         CTxDestination destPN;
-        int nIndexPN = (int) wtx.tx->vout.size() - 1;
+        int nIndexPN = (int) wtx.tx->vout.size() - 2;
         if (ExtractDestination(wtx.tx->vout[nIndexPN].scriptPubKey, destPN) && (mine = IsMine(*wallet, destPN)) ) {
             sub.involvesWatchAddress = mine & ISMINE_WATCH_ONLY;
             sub.type = TransactionRecord::PNReward;
             sub.address = EncodeDestination(destPN);
             sub.credit = wtx.tx->vout[nIndexPN].nValue;
+        }
+    } else if (isminetype mine = wallet->IsMine(wtx.tx->vout[nIndex - 1])) {
+        CTxDestination destDev;
+        int nIndexDev = (int) wtx.tx->vout.size() - 1;
+        if (ExtractDestination(wtx.tx->vout[nIndexDev].scriptPubKey, destDev) && (mine = IsMine(*wallet, destDev)) ) {
+            sub.involvesWatchAddress = mine & ISMINE_WATCH_ONLY;
+            sub.type = TransactionRecord::DevReward;
+            sub.address = EncodeDestination(destDev);
+            sub.credit = wtx.tx->vout[nIndexDev].nValue;
         }
     }
 
@@ -600,6 +610,7 @@ void TransactionRecord::updateStatus(const CWalletTx& wtx, int chainHeight)
             type == TransactionRecord::StakeMint ||
             type == TransactionRecord::StakeZFREED ||
             type == TransactionRecord::PNReward ||
+            type == TransactionRecord::DevReward ||
             type == TransactionRecord::StakeDelegated ||
             type == TransactionRecord::StakeHot) {
 

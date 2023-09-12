@@ -239,6 +239,7 @@ public:
     // can be removed after transition to DPN
     bool GetLegacyPatriotnodeTxOut(int nHeight, std::vector<CTxOut>& voutPatriotnodePaymentsRet) const;
     bool GetBlockPayee(int nBlockHeight, CScript& payee) const;
+    void PushDevFee(CMutableTransaction& txNew, const int nHeight);
 
     bool IsTransactionValid(const CTransaction& txNew, const CBlockIndex* pindexPrev, int nHeight);
     bool IsScheduled(const CPatriotnode& mn, int nNotBlockHeight);

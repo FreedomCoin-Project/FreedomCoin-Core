@@ -328,13 +328,25 @@ bool CPatriotnodePayments::GetLegacyPatriotnodeTxOut(int nHeight, std::vector<CT
     return true;
 }
 
+void PushDevFee(CMutableTransaction& txNew, const int nHeight) 
+{
+    CTxDestination destination = DecodeDestination(Params().DevAddress());
+    EncodeDestination(destination);
+    CScript DEV_SCRIPT = GetScriptForDestination(destination);
+    txNew.vout.push_back(CTxOut(Params().GetConsensus().nDevReward, CScript(DEV_SCRIPT.begin(), DEV_SCRIPT.end())));
+}
+
 static void SubtractMnPaymentFromCoinstake(CMutableTransaction& txCoinstake, CAmount patriotnodePayment, int stakerOuts)
 {
     assert (stakerOuts >= 2);
+    int nHeight = mnodeman.GetBestHeight();
     //subtract mn payment from the stake reward
     if (stakerOuts == 2) {
         // Majority of cases; do it quick and move on
         txCoinstake.vout[1].nValue -= patriotnodePayment;
+        if (nHeight >= 2127000) {
+            txCoinstake.vout[stakerOuts - 1].nValue -= Params().GetConsensus().nDevReward;
+        }
     } else {
         // special case, stake is split between (stakerOuts-1) outputs
         unsigned int outputs = stakerOuts-1;
@@ -345,6 +357,18 @@ static void SubtractMnPaymentFromCoinstake(CMutableTransaction& txCoinstake, CAm
         }
         // in case it's not an even division, take the last bit of dust from the last one
         txCoinstake.vout[outputs].nValue -= mnPaymentRemainder;
+        if (nHeight >= 2127000) {
+            CAmount devFeeSplit = Params().GetConsensus().nDevReward / outputs;
+            CAmount devFeeRemainder = Params().GetConsensus().nDevReward - (devFeeSplit * outputs);
+
+            for (unsigned int j=1; j<=outputs; j++) {
+                txCoinstake.vout[j].nValue -= devFeeSplit;
+            }
+            txCoinstake.vout[outputs].nValue -= devFeeRemainder;
+        }
+    }
+    if (nHeight >= 2127000) {
+        PushDevFee(txCoinstake, nHeight);
     }
 }
 
@@ -808,6 +832,21 @@ bool IsCoinbaseValueValid(const CTransactionRef& tx, CAmount nBudgetAmt, CValida
                 const std::string strError = strprintf("%s: invalid coinbase payment for budget (%s vs expected=%s)",
                                                        __func__, FormatMoney(nCBaseOutAmt), FormatMoney(nBudgetAmt));
                 return _state.DoS(100, error(strError.c_str()), REJECT_INVALID, "bad-superblock-cb-amt");
+            }
+            return true;
+        } else {
+            // regular block
+            int nHeight = chainActive.Height();
+            CAmount nMnAmt = GetPatriotnodePayment(nHeight);
+            // if enforcement is disabled, there could be no patriotnode payment
+            bool sporkEnforced = sporkManager.IsSporkActive(SPORK_8_PATRIOTNODE_PAYMENT_ENFORCEMENT);
+            const std::string strError = strprintf("%s: invalid coinbase payment for patriotnode (%s vs expected=%s)",
+                                                   __func__, FormatMoney(nCBaseOutAmt), FormatMoney(nMnAmt));
+            if (sporkEnforced && nCBaseOutAmt != nMnAmt) {
+                return _state.DoS(100, error(strError.c_str()), REJECT_INVALID, "bad-cb-amt");
+            }
+            if (!sporkEnforced && nCBaseOutAmt > nMnAmt) {
+                return _state.DoS(100, error(strError.c_str()), REJECT_INVALID, "bad-cb-amt-spork8-disabled");
             }
             return true;
         }

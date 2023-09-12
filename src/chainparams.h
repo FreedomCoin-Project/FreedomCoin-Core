@@ -85,6 +85,7 @@ public:
     bool IsTestnet() const { return NetworkIDString() == CBaseChainParams::TESTNET; }
 
     std::string TreasuryAddress() const { return nTreasuryAddr; }
+    std::string DevAddress() const { return nDevAddr; }
 
     void UpdateNetworkUpgradeParameters(Consensus::UpgradeIndex idx, int nActivationHeight);
 protected:
@@ -101,6 +102,7 @@ protected:
     std::vector<uint8_t> vFixedSeeds;
     bool fRequireStandard;
     std::string nTreasuryAddr;
+    std::string nDevAddr;
 };
 
 /**

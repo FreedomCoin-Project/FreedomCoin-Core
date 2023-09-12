@@ -139,8 +139,8 @@ public:
         consensus.nCoinbaseMaturity = 90;
         consensus.nFutureTimeDriftPoW = 7200;
         consensus.nFutureTimeDriftPoS = 180;
-        consensus.nMaxMoneyOut = 18000000 * COIN;
-        consensus.nPNCollateralAmt = 5000 * COIN;
+        consensus.nMaxMoneyOut = 36900000 * COIN;
+        consensus.nPNCollateralAmt = 10000 * COIN;
         consensus.nProposalEstablishmentTime = 60 * 60 * 24;    // must be at least a day old to make it into a budget
         consensus.nStakeMinAge = 8 * 60 * 60;
         consensus.nStakeMinDepth = 600;
@@ -150,7 +150,9 @@ public:
         consensus.nTimeSlotLength = 15;
         consensus.nMaxProposalPayments = 6;
         consensus.nBadBlockHeight = 1707029;
-        
+        consensus.nDevReward = 0.9 * COIN;
+        nDevAddr = "Tdon431iLRCSHDaJLvT9W9auUR1Yvv1rkG";
+
         // nTreasuryAddr = "TwubRX2kqr89gnS6ZAtsyC7UMq6Wj5HuVa";
 
         // spork keys
