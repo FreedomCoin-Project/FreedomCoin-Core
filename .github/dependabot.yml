@@ -1,0 +1,11 @@
+version: 2
+updates:
+  - package-ecosystem: "github-actions"
+    directory: "/" # Location of GitHub Actions workflow files
+    schedule:
+      interval: "weekly"
+
+  - package-ecosystem: "npm" # Or "bundler", "pip", "cargo", etc.
+    directory: "/"           # Update this if package files are in a subfolder
+    schedule:
+      interval: "weekly"
