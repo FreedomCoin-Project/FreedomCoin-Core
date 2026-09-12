@@ -25,7 +25,7 @@
  *
  * \section intro_sec Introduction
  *
- * This is the developer documentation of the reference client for an experimental new digital currency called FreedomCoin (http://www.freedomcoin.org),
+ * This is the developer documentation of the reference client for an experimental new digital currency called FreedomCoin (https://www.freedomcoin.global),
  * which enables instant payments to anyone, anywhere in the world. FreedomCoin uses peer-to-peer technology to operate
  * with no central authority: managing transactions and issuing money are carried out collectively by the network.
  *
