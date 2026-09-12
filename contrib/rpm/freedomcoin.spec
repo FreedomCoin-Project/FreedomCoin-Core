@@ -14,14 +14,14 @@
 %endif
 
 Name:		freedomcoin
-Version:	0.12.0
+Version:	5.4.1.0
 Release:	2%{?dist}
 Summary:	Peer to Peer Cryptographic Currency
 
 Group:		Applications/System
 License:	MIT
-URL:		https://freedomcoin.org/
-Source0:	https://freedomcoin.org/bin/freedomcoin-core-%{version}/freedomcoin-%{version}.tar.gz
+URL:		https://www.freedomcoin.global
+Source0:	https://github.com/FreedomCoin-Project/FreedomCoin-Core/archive/refs/tags/%{version}.tar.gz
 Source1:	http://download.oracle.com/berkeley-db/db-%{bdbv}.NC.tar.gz
 
 Source10:	https://raw.githubusercontent.com/freedomcoin-project/freedomcoin/v%{version}/contrib/debian/examples/freedomcoin.conf

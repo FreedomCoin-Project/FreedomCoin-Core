@@ -201,7 +201,7 @@ class PatriotnodeGovernanceBasicTest(FreedomCoinTier2TestFramework):
         self.log.info("preparing budget proposal..")
         firstProposal = Proposal(
             "super-cool",
-            "https://forum.freedomcoin.org/t/test-proposal",
+            "https://forum.freedomcoin.global/t/test-proposal",
             2,
             self.miner.getnewaddress(),
             300
