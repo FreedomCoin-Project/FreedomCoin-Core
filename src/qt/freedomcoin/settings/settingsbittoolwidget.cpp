@@ -113,7 +113,7 @@ void SettingsBitToolWidget::onEncryptSelected(bool isEncr)
 }
 
 QString specialChar = "\"@!#$%&'()*+,-./:;<=>?`{|}~^_[]\\";
-QString validChar = "0123456789ABCDEFGHIJKLPNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz" + specialChar;
+QString validChar = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz" + specialChar;
 
 bool isValidPassphrase(QString strPassphrase, QString& strInvalid)
 {

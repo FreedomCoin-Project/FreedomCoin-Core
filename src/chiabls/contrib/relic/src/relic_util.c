@@ -129,7 +129,7 @@ char util_conv_char(dig_t i) {
 #else
 	/* Use a table. */
 	static const char conv_table[] =
-			"0123456789ABCDEFGHIJKLPNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz+/";
+			"0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz+/";
 	return conv_table[i];
 #endif
 }

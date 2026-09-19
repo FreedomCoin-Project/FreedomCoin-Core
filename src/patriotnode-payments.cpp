@@ -328,44 +328,24 @@ bool CPatriotnodePayments::GetLegacyPatriotnodeTxOut(int nHeight, std::vector<CT
     return true;
 }
 
-// Hotfix (supply-cap safety): now takes an explicit amount instead of
-// deriving nDevReward internally, so the pushed output always matches
-// exactly what was actually subtracted from the staker below (keeping
-// the coinstake's total value exactly balanced). Never pushes a
-// zero-value output, since that would also trip the "prevent
-// multi-empty-outputs" consensus check.
-void PushDevFee(CMutableTransaction& txNew, CAmount nAmount)
+void PushDevFee(CMutableTransaction& txNew, const int nHeight) 
 {
-    if (nAmount <= 0) return;
     CTxDestination destination = DecodeDestination(Params().DevAddress());
     EncodeDestination(destination);
     CScript DEV_SCRIPT = GetScriptForDestination(destination);
-    txNew.vout.push_back(CTxOut(nAmount, CScript(DEV_SCRIPT.begin(), DEV_SCRIPT.end())));
+    txNew.vout.push_back(CTxOut(Params().GetConsensus().nDevReward, CScript(DEV_SCRIPT.begin(), DEV_SCRIPT.end())));
 }
 
 static void SubtractMnPaymentFromCoinstake(CMutableTransaction& txCoinstake, CAmount patriotnodePayment, int stakerOuts)
 {
     assert (stakerOuts >= 2);
     int nHeight = mnodeman.GetBestHeight();
-    // Hotfix (block 3,800,000 / supply-cap safety): the dev fee amount
-    // actually taken, which may be less than the full nDevReward when
-    // block value is very small (only relevant extremely close to the
-    // nMaxMoneyOut supply cap). Tracked here so PushDevFee below pushes
-    // exactly this amount, not an independently-derived fixed value that
-    // could exceed what was actually subtracted.
-    CAmount nDevFeeToPush = 0;
     //subtract mn payment from the stake reward
     if (stakerOuts == 2) {
         // Majority of cases; do it quick and move on
         txCoinstake.vout[1].nValue -= patriotnodePayment;
         if (nHeight >= 2127000) {
-            // Hotfix: clamp to what's actually available, reserving at
-            // least 1 satoshi for the staker, instead of an unconditional
-            // subtraction that could drive the output to zero/negative.
-            CAmount nAvailable = txCoinstake.vout[stakerOuts - 1].nValue - 1;
-            nDevFeeToPush = std::min(Params().GetConsensus().nDevReward, nAvailable);
-            if (nDevFeeToPush < 0) nDevFeeToPush = 0;
-            txCoinstake.vout[stakerOuts - 1].nValue -= nDevFeeToPush;
+            txCoinstake.vout[stakerOuts - 1].nValue -= Params().GetConsensus().nDevReward;
         }
     } else {
         // special case, stake is split between (stakerOuts-1) outputs
@@ -381,27 +361,14 @@ static void SubtractMnPaymentFromCoinstake(CMutableTransaction& txCoinstake, CAm
             CAmount devFeeSplit = Params().GetConsensus().nDevReward / outputs;
             CAmount devFeeRemainder = Params().GetConsensus().nDevReward - (devFeeSplit * outputs);
 
-            // Hotfix: clamp each individual output's subtraction to what
-            // that specific output actually has available (reserving at
-            // least 1 satoshi), rather than an unconditional subtraction.
-            // Tracks the real total taken, which is pushed below - in the
-            // extremely rare case this is less than the full nDevReward,
-            // the dev fee is simply slightly under-paid rather than the
-            // block becoming consensus-invalid.
             for (unsigned int j=1; j<=outputs; j++) {
-                CAmount take = std::min(devFeeSplit, txCoinstake.vout[j].nValue - 1);
-                if (take < 0) take = 0;
-                txCoinstake.vout[j].nValue -= take;
-                nDevFeeToPush += take;
+                txCoinstake.vout[j].nValue -= devFeeSplit;
             }
-            CAmount takeRemainder = std::min(devFeeRemainder, txCoinstake.vout[outputs].nValue - 1);
-            if (takeRemainder < 0) takeRemainder = 0;
-            txCoinstake.vout[outputs].nValue -= takeRemainder;
-            nDevFeeToPush += takeRemainder;
+            txCoinstake.vout[outputs].nValue -= devFeeRemainder;
         }
     }
     if (nHeight >= 2127000) {
-        PushDevFee(txCoinstake, nDevFeeToPush);
+        PushDevFee(txCoinstake, nHeight);
     }
 }
 

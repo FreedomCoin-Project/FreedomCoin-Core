@@ -867,22 +867,13 @@ CAmount GetBlockValue(int nHeight)
 
     CAmount nMoneySupply = MoneySupply.Get();
     if (nMoneySupply + nBlockValue >= Params().GetConsensus().nMaxMoneyOut) {
-        // Hotfix (supply-cap safety): taper down to the exact remaining
-        // supply budget instead of an abrupt cutoff to zero. This keeps
-        // the staker's own coinstake output positive for as long as any
-        // budget remains at all, rather than jumping straight to zero the
-        // moment the next full block reward would exceed nMaxMoneyOut -
-        // which could otherwise leave a completely empty (and
-        // consensus-invalid) staker output on a block with no
-        // transaction fees to fall back on.
-        CAmount nRemaining = Params().GetConsensus().nMaxMoneyOut - nMoneySupply;
-        nBlockValue = (nRemaining > 0) ? nRemaining : 0;
+        nBlockValue = 0;
     }
 
     return nBlockValue;
 }
 
-static int64_t GetPatriotnodePaymentSchedule(int nHeight)
+int64_t GetPatriotnodePayment(int nHeight)
 {
     CAmount nMoneySupply = MoneySupply.Get();
     int64_t nSubsidy = GetBlockValue(nHeight);
@@ -921,31 +912,6 @@ static int64_t GetPatriotnodePaymentSchedule(int nHeight)
     } else {
         return 0.7 * 1 * COIN;
     }
-}
-
-// Hotfix (block 3,800,000 / supply-cap safety): wraps the raw payment
-// schedule above with a defensive floor so the patriotnode payment can
-// never leave insufficient room in the block value for the staker (and
-// the dev fee, when active). Without this, a mismatch between the block
-// value and patriotnode payment schedules - whether from the schedule
-// simply running out of defined brackets, or from money supply
-// approaching nMaxMoneyOut and forcing block value toward zero - could
-// produce a coinstake output of zero or negative value, which is invalid
-// under the "bad-txns-vout-empty" / "bad-txns-vout-negative" consensus
-// rules and would halt the chain. This clamp makes that class of failure
-// structurally impossible regardless of the underlying schedule values.
-int64_t GetPatriotnodePayment(int nHeight)
-{
-    CAmount nBlockValue = GetBlockValue(nHeight);
-    CAmount nRawPayment = GetPatriotnodePaymentSchedule(nHeight);
-    CAmount nDevFee = (nHeight >= 2127000) ? Params().GetConsensus().nDevReward : 0;
-    // Reserve at least 1 satoshi for the staker's own output.
-    CAmount nMaxSafePayment = nBlockValue - nDevFee - 1;
-    if (nMaxSafePayment < 0) nMaxSafePayment = 0;
-    if (nRawPayment > nMaxSafePayment) {
-        return nMaxSafePayment;
-    }
-    return nRawPayment;
 }
 
 bool IsInitialBlockDownload()
@@ -1727,7 +1693,7 @@ static bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockInd
             REJECT_INVALID, "bad-blk-amount");
     }
 
-    int nHeight;
+    int nHeight = pindex->nHeight;
     // Patriotnode/Budget payments
     // !TODO: after transition to DPN is complete, check this also during IBD
     if (!fInitialBlockDownload) {

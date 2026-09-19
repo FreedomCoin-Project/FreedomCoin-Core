@@ -17,7 +17,7 @@
 
 
 
-static const std::string CHARS_ALPHA_NUM = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLPNOPQRSTUVWXYZ0123456789";
+static const std::string CHARS_ALPHA_NUM = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
 
 static const std::string SAFE_CHARS[] =
 {
@@ -125,7 +125,7 @@ std::vector<unsigned char> ParseHex(const std::string& str)
 
 std::string EncodeBase64(Span<const unsigned char> input)
 {
-    static const char *pbase64 = "ABCDEFGHIJKLPNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+    static const char *pbase64 = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
 
     std::string str;
     str.reserve(((input.size() + 2) / 3) * 4);
